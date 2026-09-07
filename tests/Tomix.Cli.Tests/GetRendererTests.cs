@@ -11,10 +11,10 @@ namespace Tomix.Cli.Tests;
 [Collection(ConsoleStateCollection.Name)]
 public sealed class GetRendererTests
 {
-    private const string Harbor = "\x1b[38;2;78;138;181m"; // functions
-    private const string Sage = "\x1b[38;2;62;146;135m";   // table names
-    private const string Moss = "\x1b[38;2;92;157;82m";    // column references
-    private const string Orchid = "\x1b[38;2;192;90;158m"; // measure references
+    private const string Harbor = "\x1b[38;2;69;130;172m";  // functions
+    private const string Sage = "\x1b[38;2;52;137;126m";    // table names
+    private const string Moss = "\x1b[38;2;64;129;57m";     // column references
+    private const string Orchid = "\x1b[38;2;207;103;172m"; // measure references
 
     [Fact]
     public void DaxExpression_IsHighlighted()

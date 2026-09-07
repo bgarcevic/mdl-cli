@@ -13,11 +13,11 @@ namespace Tomix.Cli.Tests;
 [Collection(ConsoleStateCollection.Name)]
 public sealed class LsRendererTests
 {
-    private const string Slate = "\x1b[38;2;118;128;137m";
-    private const string Harbor = "\x1b[38;2;78;138;181m"; // functions
-    private const string Sage = "\x1b[38;2;62;146;135m";   // table names
-    private const string Moss = "\x1b[38;2;92;157;82m";    // column references
-    private const string Orchid = "\x1b[38;2;192;90;158m"; // measure references
+    private const string Slate = "\x1b[38;2;117;127;136m";
+    private const string Harbor = "\x1b[38;2;69;130;172m";  // functions
+    private const string Sage = "\x1b[38;2;52;137;126m";    // table names
+    private const string Moss = "\x1b[38;2;64;129;57m";     // column references
+    private const string Orchid = "\x1b[38;2;207;103;172m"; // measure references
 
     [Fact]
     public void HiddenTable_MutesEveryCell()
@@ -74,7 +74,7 @@ public sealed class LsRendererTests
 
         Assert.Contains("... (+1 line)", output);
         // No literal in the cell or the suffix, so Amber (strings/numbers) must not appear at all.
-        Assert.DoesNotContain("\x1b[38;2;181;131;47m", output);
+        Assert.DoesNotContain("\x1b[38;2;176;126;42m", output);
     }
 
     [Fact]

@@ -5,17 +5,22 @@ using Tomix.Core.Dax;
 
 namespace Tomix.Cli.Output;
 
+// Hue and chroma are the original design; each color's lightness is tuned so every role keeps
+// ≥3.3:1 contrast on both dark and light terminal backgrounds (the practical ceiling — 4.5:1 on
+// both is mathematically impossible for one palette), and so same-view roles separate by
+// lightness as well as hue, which keeps them distinguishable for red-green color-blind users.
+// Construction and thresholds: docs/cli-color-strategy.md; enforced by PaletteTests.
 internal static class Palette
 {
-    public static readonly Color Sage = new(0x3E, 0x92, 0x87);
-    public static readonly Color Lav = new(0x8E, 0x7B, 0xB8);
-    public static readonly Color Terra = new(0xB5, 0x80, 0x5C);
-    public static readonly Color Harbor = new(0x4E, 0x8A, 0xB5);
-    public static readonly Color Moss = new(0x5C, 0x9D, 0x52);
-    public static readonly Color Amber = new(0xB5, 0x83, 0x2F);
-    public static readonly Color Rose = new(0xC2, 0x5E, 0x5E);
-    public static readonly Color Orchid = new(0xC0, 0x5A, 0x9E);
-    public static readonly Color Slate = new(0x76, 0x80, 0x89);
+    public static readonly Color Sage = new(0x34, 0x89, 0x7E);
+    public static readonly Color Lav = new(0x85, 0x72, 0xAF);
+    public static readonly Color Terra = new(0x96, 0x64, 0x42);
+    public static readonly Color Harbor = new(0x45, 0x82, 0xAC);
+    public static readonly Color Moss = new(0x40, 0x81, 0x39);
+    public static readonly Color Amber = new(0xB0, 0x7E, 0x2A);
+    public static readonly Color Rose = new(0xCC, 0x67, 0x66);
+    public static readonly Color Orchid = new(0xCF, 0x67, 0xAC);
+    public static readonly Color Slate = new(0x75, 0x7F, 0x88);
 }
 
 internal static class Styling
