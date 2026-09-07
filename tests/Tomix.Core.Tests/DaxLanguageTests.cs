@@ -40,6 +40,53 @@ public sealed class DaxLanguageTests
     }
 
     [Fact]
+    public void Classify_FilterComparison_IsNotMistakenForADefinition()
+    {
+        const string dax = "CALCULATE([Sales], 'Date Role'[Date Role] = \"By Due Date\")";
+
+        // The equality inside the filter must not turn the expression head into a definition name:
+        // the same CALCULATE has to color the same way with and without a filter argument.
+        Assert.DoesNotContain(DaxLanguage.Classify(dax), span => span.Classification == DaxTextClassification.DefinitionName);
+        Assert.Equal(DaxTextClassification.Function, ClassificationOf(dax, "CALCULATE"));
+        Assert.Equal(DaxTextClassification.ColumnReference, ClassificationOf(dax, "[Sales]"));
+        Assert.Equal(DaxTextClassification.TableName, ClassificationOf(dax, "'Date Role'"));
+        Assert.Equal(DaxTextClassification.ColumnReference, ClassificationOf(dax, "[Date Role]"));
+        Assert.Equal(DaxTextClassification.StringLiteral, ClassificationOf(dax, "\"By Due Date\""));
+    }
+
+    [Fact]
+    public void Classify_ComparisonExpression_IsNotMistakenForADefinition()
+    {
+        const string dax = "[Sales] - [Cost] = 0";
+
+        Assert.DoesNotContain(DaxLanguage.Classify(dax), span => span.Classification == DaxTextClassification.DefinitionName);
+        Assert.Equal(DaxTextClassification.ColumnReference, ClassificationOf(dax, "[Sales]"));
+        Assert.Equal(DaxTextClassification.ColumnReference, ClassificationOf(dax, "[Cost]"));
+    }
+
+    [Fact]
+    public void Classify_BareDefinition_StillMarksTheName()
+    {
+        const string dax = "Sales Amount % = SUM('Sales'[Amount])";
+
+        Assert.Equal(DaxTextClassification.DefinitionName, ClassificationOf(dax, "Sales"));
+        Assert.Equal(DaxTextClassification.Function, ClassificationOf(dax, "SUM"));
+        Assert.Equal(DaxTextClassification.TableName, ClassificationOf(dax, "'Sales'"));
+    }
+
+    [Fact]
+    public void Classify_BracketedDefinitionWithParens_StillMarksTheName()
+    {
+        const string dax = "[Order Quantity (base)] = SUM('Sales'[Amount])";
+
+        // The parentheses live inside the bracketed name token, so the definition survives.
+        var name = SpanContaining(dax, "[Order Quantity (base)]");
+        Assert.Equal(DaxTextClassification.DefinitionName, name.Classification);
+        Assert.Equal("[Order Quantity (base)]".Length, name.Length);
+        Assert.Equal(DaxTextClassification.Function, ClassificationOf(dax, "SUM"));
+    }
+
+    [Fact]
     public void Classify_DottedFunctionAndDateLiteralAndParameter()
     {
         Assert.Equal(DaxTextClassification.Function, ClassificationOf("NORM.DIST(1, 0, 1, TRUE)", "NORM.DIST"));

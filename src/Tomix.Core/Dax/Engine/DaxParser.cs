@@ -76,6 +76,9 @@ internal sealed class DaxParser(IReadOnlyList<DaxToken> tokens, string source)
     /// "Product Rank = ...". A measure name may contain punctuation, so every token on the first
     /// line up to the assignment belongs to the name. Requiring the assignment on that same line
     /// prevents a later equality inside the expression from being mistaken for the definition.
+    /// Tokens that cannot appear in a name — call structure, literals, operators — end the scan
+    /// instead: an equality inside, say, CALCULATE([Sales], 'Date Role'[Date Role] = "By Due Date")
+    /// belongs to a filter comparison, so the whole expression head must not become a name.
     /// </summary>
     private DaxNode? TryParseStandaloneDefinition()
     {
@@ -104,6 +107,15 @@ internal sealed class DaxParser(IReadOnlyList<DaxToken> tokens, string source)
             // Once a name has begun, the same words are legal parts of a measure name.
             if (names.Count == 0 && token.Kind == DaxTokenKind.Identifier &&
                 (StatementKeywords.Contains(token.Text) || token.IsKeyword("VAR")))
+                return null;
+
+            // The assignment = / := is handled above, so any remaining operator, call structure or
+            // literal means the statement is an expression whose equality sits inside it.
+            if (token.Kind is DaxTokenKind.Operator
+                or DaxTokenKind.OpenParenthesis or DaxTokenKind.CloseParenthesis
+                or DaxTokenKind.Comma
+                or DaxTokenKind.OpenBrace or DaxTokenKind.CloseBrace
+                or DaxTokenKind.String or DaxTokenKind.DateTime)
                 return null;
 
             names.Add(token);
