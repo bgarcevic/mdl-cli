@@ -16,6 +16,8 @@ public sealed class LsRendererTests
     private const string Slate = "\x1b[38;2;118;128;137m";
     private const string Harbor = "\x1b[38;2;78;138;181m"; // functions
     private const string Sage = "\x1b[38;2;62;146;135m";   // table names
+    private const string Moss = "\x1b[38;2;92;157;82m";    // column references
+    private const string Orchid = "\x1b[38;2;192;90;158m"; // measure references
 
     [Fact]
     public void HiddenTable_MutesEveryCell()
@@ -101,17 +103,32 @@ public sealed class LsRendererTests
         Assert.Contains(Sage + "'Sales'", output);
     }
 
+    [Fact]
+    public void MeasureReference_IsColoredApartFromColumns()
+    {
+        var measures = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Profit", "Cost" };
+        var output = RenderWith(measures, Measure("Profit", "DIVIDE([Profit], [Cost]) + [Qty]"));
+
+        Assert.Contains(Orchid + "[Profit]", output);
+        Assert.Contains(Orchid + "[Cost]", output);
+        // An unqualified bracket that resolves to no measure stays a column.
+        Assert.Contains(Moss + "[Qty]", output);
+    }
+
     private static string RenderTables(params LsObject[] objects) => Render(objects, noMultiline: true);
 
     private static string RenderMultiline(params LsObject[] objects) => Render(objects, noMultiline: false);
 
-    private static string Render(LsObject[] objects, bool noMultiline)
+    private static string RenderWith(IReadOnlySet<string> measureNames, params LsObject[] objects)
+        => Render(objects, noMultiline: true, measureNames: measureNames);
+
+    private static string Render(LsObject[] objects, bool noMultiline, IReadOnlySet<string>? measureNames = null)
     {
         var captured = ConsoleCapture.Run(
             () =>
             {
                 LsRenderer.Render(
-                    new LsModelResult("Sample", 1550, objects),
+                    new LsModelResult("Sample", 1550, objects, measureNames),
                     pathsOnly: false,
                     noMultiline: noMultiline);
                 return 0;

@@ -14,6 +14,7 @@ internal static class Palette
     public static readonly Color Moss = new(0x5C, 0x9D, 0x52);
     public static readonly Color Amber = new(0xB5, 0x83, 0x2F);
     public static readonly Color Rose = new(0xC2, 0x5E, 0x5E);
+    public static readonly Color Orchid = new(0xC0, 0x5A, 0x9E);
     public static readonly Color Slate = new(0x76, 0x80, 0x89);
 }
 
@@ -49,12 +50,14 @@ internal static class Styling
     /// A DAX expression as Spectre markup, syntax-highlighted from
     /// <see cref="DaxLanguage.Classify"/>: keywords, functions, strings, comments, and
     /// table/column references each take the palette role they read as. Unstyled text (and all
-    /// markup) is escaped, so a DAX <c>[Column]</c> can never inject markup of its own. Use only
-    /// in human output; JSON/CSV paths stay markup-free.
+    /// markup) is escaped, so a DAX <c>[Column]</c> can never inject markup of its own. Pass
+    /// <paramref name="measureNames"/> (from <c>DaxModelNames.MeasureNames</c>) to resolve
+    /// bracketed references to measures, which get their own role. Use only in human output;
+    /// JSON/CSV paths stay markup-free.
     /// </summary>
-    public static string DaxMarkup(string expression)
+    public static string DaxMarkup(string expression, IReadOnlySet<string>? measureNames = null)
     {
-        var spans = DaxLanguage.Classify(expression);
+        var spans = DaxLanguage.Classify(expression, measureNames);
         var markup = new StringBuilder(expression.Length);
         var position = 0;
 
@@ -87,6 +90,7 @@ internal static class Styling
             DaxTextClassification.Function => Palette.Harbor.ToMarkup(),
             DaxTextClassification.TableName => Palette.Sage.ToMarkup(),
             DaxTextClassification.ColumnReference => Palette.Moss.ToMarkup(),
+            DaxTextClassification.MeasureReference => Palette.Orchid.ToMarkup(),
             DaxTextClassification.Variable => Palette.Terra.ToMarkup(),
             DaxTextClassification.StringLiteral or DaxTextClassification.Number
                 or DaxTextClassification.QueryParameter => Palette.Amber.ToMarkup(),
@@ -99,13 +103,19 @@ internal static class Styling
     /// An expression for human output — the one entry point renderers use for DAX-bearing text.
     /// DAX comes back syntax-highlighted via <see cref="DaxMarkup"/>; anything else (M, plain
     /// text) is markup-escaped. <paramref name="isDax"/> comes from
-    /// <c>DaxExpressions.IsDaxValue</c>/<c>IsDaxExpression</c> (Tomix.App.Dax). A trailing
-    /// preview note ("... (+2 lines)") rides in <paramref name="suffix"/> so it stays plain
-    /// even in a highlighted cell. Use only in human output; JSON/CSV paths stay markup-free.
+    /// <c>DaxExpressions.IsDaxValue</c>/<c>IsDaxExpression</c> (Tomix.App.Dax);
+    /// <paramref name="measureNames"/> resolves measure references so they color apart from
+    /// columns. A trailing preview note ("... (+2 lines)") rides in <paramref name="suffix"/> so
+    /// it stays plain even in a highlighted cell. Use only in human output; JSON/CSV paths stay
+    /// markup-free.
     /// </summary>
-    public static string ExpressionMarkup(bool isDax, string text, string? suffix = null)
+    public static string ExpressionMarkup(
+        bool isDax,
+        string text,
+        IReadOnlySet<string>? measureNames = null,
+        string? suffix = null)
         => isDax
-            ? DaxMarkup(text) + MarkupEscape(suffix ?? "")
+            ? DaxMarkup(text, measureNames) + MarkupEscape(suffix ?? "")
             : MarkupEscape(text + suffix);
 
     private static void Plain(StringBuilder markup, string text) => markup.Append(MarkupEscape(text));

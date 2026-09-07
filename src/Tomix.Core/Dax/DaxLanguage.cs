@@ -11,6 +11,9 @@ public enum DaxTextClassification
     Comment,
     TableName,
     ColumnReference,
+
+    /// <summary>A bracketed reference that resolves to a measure in the model, not a column.</summary>
+    MeasureReference,
     Variable,
     QueryParameter,
     Parenthesis,
@@ -40,6 +43,39 @@ public static class DaxLanguage
                 span.Length,
                 Map(span.Kind)))
             .ToArray();
+
+    /// <summary>
+    /// Classifies <paramref name="dax"/> and resolves bracketed references against the model's
+    /// measure names: a <c>[Name]</c> — qualified or not — whose name is in
+    /// <paramref name="measureNames"/> comes back as <see cref="DaxTextClassification.MeasureReference"/>
+    /// instead of a column. The syntax classification alone cannot tell measures from columns,
+    /// because both are bracketed names and the engine deliberately sees no model; the caller
+    /// supplies that knowledge. The set should be case-insensitive, like DAX name resolution,
+    /// and a name that exists as both wins as a measure.
+    /// </summary>
+    public static IReadOnlyList<DaxClassifiedSpan> Classify(string dax, IReadOnlySet<string>? measureNames)
+    {
+        var spans = Classify(dax);
+        if (measureNames is null || measureNames.Count == 0)
+            return spans;
+
+        return spans
+            .Select(span => span.Classification == DaxTextClassification.ColumnReference
+                && MeasureNameOf(dax, span) is { } name
+                && measureNames.Contains(name)
+                    ? span with { Classification = DaxTextClassification.MeasureReference }
+                    : span)
+            .ToArray();
+    }
+
+    /// <summary>The bracketed span's name with DAX's doubled-delimiter escapes undone, or null.</summary>
+    private static string? MeasureNameOf(string dax, DaxClassifiedSpan span)
+    {
+        if (span.Length < 2 || dax[span.Start] != '[' || dax[span.Start + span.Length - 1] != ']')
+            return null;
+
+        return dax.Substring(span.Start + 1, span.Length - 2).Replace("]]", "]", StringComparison.Ordinal);
+    }
 
     private static DaxTextClassification Map(Engine.DaxClassification classification) =>
         classification switch

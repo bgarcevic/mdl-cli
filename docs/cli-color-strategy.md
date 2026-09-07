@@ -16,6 +16,7 @@ All colors are chosen for readability on both dark and light terminal background
 | Success | Moss    | `#5C9D52` | `OK Project initialized`   | Completed actions            |
 | Warning | Amber   | `#B5832F` | `WARN Config not found`    | Recoverable issues           |
 | Error   | Rose    | `#C25E5E` | `ERROR Build failed`       | Failures                     |
+| Measures| Orchid  | `#C05A9E` | `[Profit]` in DAX          | Measure references in DAX    |
 | Muted   | Slate   | `#768089` | `(2.3s elapsed)`           | Hints, timings, secondary    |
 
 ## Palette Implementation
@@ -36,6 +37,7 @@ internal static class Palette
     public static readonly Color Moss   = new(0x5C, 0x9D, 0x52);
     public static readonly Color Amber  = new(0xB5, 0x83, 0x2F);
     public static readonly Color Rose   = new(0xC2, 0x5E, 0x5E);
+    public static readonly Color Orchid = new(0xC0, 0x5A, 0x9E);
     public static readonly Color Slate  = new(0x76, 0x80, 0x89);
 }
 ```
@@ -60,7 +62,7 @@ Use `Palette.Sage` for Spectre widget styling (table borders, panel borders). Us
 | Table              | Spectre `Table().RoundedBorder().BorderColor(Palette.Slate)` | Already established in `LsRenderer` |
 | Table row de-emphasis | Whole row in Slate (`Styling.Muted` per cell) | Hidden-object rows in `ls` are muted end to end |
 | Connection banner  | Slate on stderr                               | `Connected to: C:\models\Sales` before the model opens |
-| DAX highlighting   | Role-mapped palette on text output only       | `get` property view and `ls` expression cells: keywords Lav, functions Harbor, tables Sage, columns Moss, variables Terra, literals Amber, comments Slate; M expressions and JSON/CSV/TMDL/BIM stay markup-free |
+| DAX highlighting   | Role-mapped palette on text output only       | `get` property view and `ls` expression cells: keywords Lav, functions Harbor, tables Sage, columns Moss, measures Orchid, variables Terra, literals Amber, comments Slate; M expressions and JSON/CSV/TMDL/BIM stay markup-free |
 | CI annotations     | Plain text, no markup                         | `::error::...` / `##vso[task.logissue...]`       |
 
 ## NO_COLOR Compliance
@@ -93,7 +95,7 @@ All output helpers live in `src/Tomix.Cli/Output/Styling.cs`. Use these instead 
 | `Styling.Guidance(text)`                | Slate                                    |
 | `Styling.MarkupEscape(text)`            | Escapes `[` and `]` for Spectre markup  |
 | `Styling.DaxMarkup(expression)`         | Syntax-highlighted DAX as escaped markup (see Message Categories) |
-| `Styling.ExpressionMarkup(isDax, text)` | The shared entry point for expression text: highlighted when `isDax` (from `DaxExpressions.IsDaxValue`/`IsDaxExpression`), escaped plain otherwise; optional `suffix` (e.g. `... (+2 lines)`) stays plain |
+| `Styling.ExpressionMarkup(isDax, text)` | The shared entry point for expression text: highlighted when `isDax` (from `DaxExpressions.IsDaxValue`/`IsDaxExpression`), escaped plain otherwise; optional `measureNames` resolves measure references to their own color, optional `suffix` (e.g. `... (+2 lines)`) stays plain |
 | `Styling.SeverityMarkup(severity)`      | Colored severity label (Error/Warning/Info) |
 | `Styling.NewTable(params columns)`      | Rounded-border table with Slate border   |
 

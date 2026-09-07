@@ -59,7 +59,7 @@ internal static class GetRenderer
         foreach (var (key, value) in result.Properties)
         {
             if (value is string text && DaxExpressions.IsDaxValue(result.Object, text))
-                AnsiConsole.MarkupLine($"{Styling.MarkupEscape(key)}: {Styling.ExpressionMarkup(isDax: true, text)}");
+                AnsiConsole.MarkupLine($"{Styling.MarkupEscape(key)}: {Styling.ExpressionMarkup(isDax: true, text, result.MeasureNames)}");
             else
                 Console.WriteLine($"{key}: {value}");
         }

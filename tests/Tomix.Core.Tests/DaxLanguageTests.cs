@@ -134,6 +134,57 @@ public sealed class DaxLanguageTests
         }
     }
 
+    [Fact]
+    public void Classify_MeasureNames_ResolveBracketedReferences()
+    {
+        // [Profit] is unqualified, 'Sales'[Sales Amount] qualified, and [Total Product Cost] a
+        // plain column — resolution must not depend on the reference's shape.
+        const string dax = "CALCULATE([Profit], 'Sales'[Sales Amount]) - [Total Product Cost]";
+        var measures = Names("Profit", "Sales Amount");
+
+        Assert.Equal(DaxTextClassification.MeasureReference, ClassificationWith(measures, dax, "[Profit]"));
+        Assert.Equal(DaxTextClassification.MeasureReference, ClassificationWith(measures, dax, "[Sales Amount]"));
+        Assert.Equal(DaxTextClassification.ColumnReference, ClassificationWith(measures, dax, "[Total Product Cost]"));
+    }
+
+    [Fact]
+    public void Classify_MeasureResolution_IsCaseInsensitive()
+    {
+        const string dax = "[profit] + [Margin]";
+
+        Assert.Equal(
+            DaxTextClassification.MeasureReference,
+            ClassificationWith(Names("Profit"), dax, "[profit]"));
+        Assert.Equal(
+            DaxTextClassification.ColumnReference,
+            ClassificationWith(Names("Profit"), dax, "[Margin]"));
+    }
+
+    [Fact]
+    public void Classify_WithoutMeasureNames_BracketsStayColumns()
+    {
+        const string dax = "[Profit] - [Cost]";
+
+        Assert.DoesNotContain(
+            DaxLanguage.Classify(dax, null),
+            span => span.Classification == DaxTextClassification.MeasureReference);
+    }
+
+    private static IReadOnlySet<string> Names(params string[] names)
+        => new HashSet<string>(names, StringComparer.OrdinalIgnoreCase);
+
+    private static DaxTextClassification ClassificationWith(IReadOnlySet<string> measures, string dax, string marker)
+        => SpanContainingWith(measures, dax, marker).Classification;
+
+    private static DaxClassifiedSpan SpanContainingWith(IReadOnlySet<string> measures, string dax, string text)
+    {
+        var start = dax.IndexOf(text, StringComparison.Ordinal);
+        Assert.True(start >= 0, $"Text '{text}' not found in '{dax}'.");
+
+        var spans = DaxLanguage.Classify(dax, measures);
+        return Assert.Single(spans, span => span.Start <= start && start < span.Start + span.Length);
+    }
+
     private static DaxTextClassification ClassificationOf(string dax, string marker)
         => SpanContaining(dax, marker.TrimEnd(',')).Classification;
 
