@@ -60,6 +60,7 @@ Use `Palette.Sage` for Spectre widget styling (table borders, panel borders). Us
 | Table              | Spectre `Table().RoundedBorder().BorderColor(Palette.Slate)` | Already established in `LsRenderer` |
 | Table row de-emphasis | Whole row in Slate (`Styling.Muted` per cell) | Hidden-object rows in `ls` are muted end to end |
 | Connection banner  | Slate on stderr                               | `Connected to: C:\models\Sales` before the model opens |
+| DAX highlighting   | Role-mapped palette on text output only       | `get` property view and `ls` expression cells: keywords Lav, functions Harbor, tables Sage, columns Moss, variables Terra, literals Amber, comments Slate; M expressions and JSON/CSV/TMDL/BIM stay markup-free |
 | CI annotations     | Plain text, no markup                         | `::error::...` / `##vso[task.logissue...]`       |
 
 ## NO_COLOR Compliance
@@ -91,6 +92,8 @@ All output helpers live in `src/Tomix.Cli/Output/Styling.cs`. Use these instead 
 | `Styling.KeyValue(label, value)`        | Bold label + plain value                 |
 | `Styling.Guidance(text)`                | Slate                                    |
 | `Styling.MarkupEscape(text)`            | Escapes `[` and `]` for Spectre markup  |
+| `Styling.DaxMarkup(expression)`         | Syntax-highlighted DAX as escaped markup (see Message Categories) |
+| `Styling.ExpressionMarkup(isDax, text)` | The shared entry point for expression text: highlighted when `isDax` (from `DaxExpressions.IsDaxValue`/`IsDaxExpression`), escaped plain otherwise; optional `suffix` (e.g. `... (+2 lines)`) stays plain |
 | `Styling.SeverityMarkup(severity)`      | Colored severity label (Error/Warning/Info) |
 | `Styling.NewTable(params columns)`      | Rounded-border table with Slate border   |
 

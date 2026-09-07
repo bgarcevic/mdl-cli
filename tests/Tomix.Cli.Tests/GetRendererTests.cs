@@ -1,0 +1,62 @@
+using Tomix.App.Get;
+using Tomix.Cli.Output;
+using Tomix.Core.Models;
+
+namespace Tomix.Cli.Tests;
+
+/// <summary>
+/// The get properties view highlights DAX-bearing values and nothing else. Asserted on the
+/// true-color escape sequences because markup is consumed before the writer sees it.
+/// </summary>
+[Collection(ConsoleStateCollection.Name)]
+public sealed class GetRendererTests
+{
+    private const string Harbor = "\x1b[38;2;78;138;181m"; // functions
+    private const string Sage = "\x1b[38;2;62;146;135m";   // table names
+
+    [Fact]
+    public void DaxExpression_IsHighlighted()
+    {
+        var measure = new ModelObject("Cost", ModelObjectKind.Measure, "Sales/Cost",
+            Detail: null, Expression: "SUM('Sales'[Total Product Cost])", Description: null,
+            Hidden: false, SourceColumn: null, Children: []);
+
+        var output = Render(measure);
+
+        Assert.Contains(Harbor + "SUM", output);
+        Assert.Contains(Sage + "'Sales'", output);
+    }
+
+    [Fact]
+    public void MPartitionExpression_StaysPlain()
+    {
+        const string m = "Table.SelectRows(Source, each [X] > 0)";
+        var partition = new ModelObject("Part", ModelObjectKind.Partition, "Sales/Part",
+            Detail: "m", Expression: m, Description: null, Hidden: false,
+            SourceColumn: null, Children: [],
+            Properties: new Dictionary<string, string> { ["PartitionSourceType"] = "M" });
+
+        var output = Render(partition, ("expression", m), ("mode", "import"));
+
+        Assert.DoesNotContain("\x1b[38;2;", output);
+        Assert.Contains("expression: " + m, output);
+    }
+
+    private static string Render(ModelObject obj, params (string Key, object? Value)[] properties)
+    {
+        var dictionary = properties.Length > 0
+            ? properties.ToDictionary(entry => entry.Key, entry => entry.Value)
+            : new Dictionary<string, object?>
+            {
+                ["name"] = obj.Name,
+                ["expression"] = obj.Expression ?? "",
+                ["formatString"] = "\"$\"#,0",
+            };
+        var result = new GetModelResult(obj.Kind.ToString(), obj.Path, dictionary, obj);
+
+        return ConsoleCapture.Run(
+            () => { GetRenderer.Render(result, "text"); return 0; },
+            captureAnsiConsole: true,
+            forceAnsi: true).Stdout;
+    }
+}
