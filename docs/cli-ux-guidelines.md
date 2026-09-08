@@ -56,8 +56,10 @@ the bottom for where each concern lives.
   command through `JsonOutput`/`CsvOutput`; `--paths-only`-style flags where a
   plain one-record-per-line form aids piping (clig's `--plain`).
 - On success, print something brief — silence reads as a hang — but err toward
-  less. Support `--quiet` to suppress non-essential output (no `-q` alias: several
-  commands use a local `-q` for property/query input). [tomix: gap.]
+  less. Support `--quiet` to suppress non-essential output. `-q` is reserved for
+  `--quiet` but not yet bound: `add`/`set` still accept the bare compatibility
+  `-q`/`-i` property form (retired at 1.0), and `get`/`query` use `--query`.
+  [tomix: gap — bind `-q` when the compat aliases retire.]
 - If you change state, say exactly what changed and what the new state is
   (model object counts, target workspace, file written). Make current state easy
   to inspect (`session`, `stage`, `doctor` are our `git status` equivalents).
