@@ -44,7 +44,6 @@ internal sealed class FormatCommand : ICommandModule
         {
             Description = "Format the expression on a model object path"
         };
-        pathOption.Aliases.Add("-p");
         var semicolonsOption = new Option<bool>("--semicolons")
         {
             Description = "Use semicolons as DAX list separators"
