@@ -117,25 +117,31 @@ public sealed class PropertyFlagTests
     // ── -q freedom on get/query ─────────────────────────────────────────────
 
     [Fact]
-    public void Get_LongQuery_Parses_ShortQIsUnknown()
+    public void Get_LongQuery_Parses_ShortQIsQuiet()
     {
-        // -q is being freed for the global --quiet standard once the add/set compat
-        // aliases retire at 1.0; get/query keep only the long form.
+        // get/query keep only the long --query form; -q is the global quiet alias, so a bare
+        // property word after it lands in the [model] positional and fails at resolve time.
         var services = TestServices.Create();
         var root = TestRoot.With(new GetCommand([], services.State).Build());
 
         Assert.Empty(root.Parse(["get", "Sales", "--query", "expression"]).Errors);
-        Assert.NotEmpty(root.Parse(["get", "Sales", "-q", "expression"]).Errors);
+
+        var shortQ = root.Parse(["get", "Sales", "-q", "expression"]);
+        Assert.True(shortQ.GetValue(GlobalOptions.Quiet));
     }
 
     [Fact]
-    public void Query_LongQuery_Parses_ShortQIsUnknown()
+    public void Query_LongQuery_Parses_ShortQIsQuiet()
     {
         var services = TestServices.Create();
         var root = TestRoot.With(new QueryCommand([], () => null).Build());
 
         Assert.Empty(root.Parse(["query", "--query", "EVALUATE Sales"]).Errors);
-        Assert.NotEmpty(root.Parse(["query", "-q", "EVALUATE Sales"]).Errors);
+
+        // query has no positional arguments, so inline text still needs --query; -q itself is quiet.
+        var shortQ = root.Parse(["query", "-q", "EVALUATE Sales"]);
+        Assert.True(shortQ.GetValue(GlobalOptions.Quiet));
+        Assert.NotEmpty(shortQ.Errors);
     }
 
     private static RootCommand BuildAddRoot()

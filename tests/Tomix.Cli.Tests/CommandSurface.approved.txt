@@ -12,7 +12,7 @@ tx - CLI for semantic models
   opt --debug  Show the full stack trace on stderr when an unexpected error occurs
   opt --non-interactive  Disable all interactive prompts. Fail with an actionable error if required input is missing.
   opt --yes, -y  Skip confirmation prompts for destructive operations
-  opt --quiet  Suppress non-essential output (spinners, progress, hints). Errors and data still print.
+  opt --quiet, -q  Suppress non-essential output (spinners, progress, hints). Errors and data still print.
 
 # tx add
 Add an object to the model
