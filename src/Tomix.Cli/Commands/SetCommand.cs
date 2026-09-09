@@ -1,10 +1,10 @@
 using System.CommandLine;
 using Spectre.Console;
 using Tomix.App.Mutations;
-using Tomix.Core.Diagnostics;
 using Tomix.App.Set;
 using Tomix.App.State;
 using Tomix.Cli.Output;
+using Tomix.Core.Diagnostics;
 using Tomix.Core.Models;
 
 namespace Tomix.Cli.Commands;
