@@ -238,7 +238,7 @@ Search for text across model objects
   opt --no-multiline  Collapse multi-line match context to a single line. Text output only.
 
 # tx format
-Format DAX or M/Power Query expressions (-e inline, -p object path, or all)
+Format DAX or M/Power Query expressions (--expression inline, --path object path, or all)
   arg [model]  Path to model (if not using --model)
   opt --expression, -e <expression>  Format an inline expression
   opt --path <path>  Format the expression on a model object path
