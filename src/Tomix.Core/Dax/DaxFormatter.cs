@@ -40,10 +40,26 @@ public static class DaxFormatter
     /// </exception>
     public static DaxFormatResult TryFormat(string dax, int maximumLineLength = DefaultMaximumLineLength)
     {
-        if (TryFormat(dax, maximumLineLength, out var formatted))
-            return new DaxFormatResult(true, formatted, null);
+        if (string.IsNullOrWhiteSpace(dax))
+            return new DaxFormatResult(false, dax, null);
 
-        return new DaxFormatResult(false, formatted, FirstDifferenceLine(dax, formatted));
+        try
+        {
+            if (!Engine.DaxCodeFormatter.TryFormatChecked(dax, maximumLineLength, out var prepared, out var printed))
+            {
+                // Declined: the text to use is the prepared input, and the first difference is
+                // found by comparing it against the rejected printed output.
+                return new DaxFormatResult(false, NormalizeLineEndings(prepared), FirstDifferenceLine(prepared, printed));
+            }
+
+            return new DaxFormatResult(true, NormalizeLineEndings(printed), null);
+        }
+        catch (ArgumentException ex) when (ex is not ArgumentOutOfRangeException)
+        {
+            // The text unwraps to nothing (for example a fenced block with no code inside). An
+            // out-of-range line length is a caller bug and must keep throwing.
+            return new DaxFormatResult(false, dax, null);
+        }
     }
 
     /// <summary>
@@ -56,23 +72,9 @@ public static class DaxFormatter
     /// </exception>
     public static bool TryFormat(string dax, int maximumLineLength, out string formatted)
     {
-        if (string.IsNullOrWhiteSpace(dax))
-        {
-            formatted = dax;
-            return false;
-        }
-
-        try
-        {
-            return Engine.DaxCodeFormatter.TryFormat(dax, maximumLineLength, out formatted);
-        }
-        catch (ArgumentException ex) when (ex is not ArgumentOutOfRangeException)
-        {
-            // The text unwraps to nothing (for example a fenced block with no code inside). An
-            // out-of-range line length is a caller bug and must keep throwing.
-            formatted = dax;
-            return false;
-        }
+        var result = TryFormat(dax, maximumLineLength);
+        formatted = result.Formatted;
+        return result.Success;
     }
 
     /// <summary>Formats <paramref name="dax"/> at the default line length. See the two-argument overload.</summary>
@@ -80,53 +82,53 @@ public static class DaxFormatter
         => TryFormat(dax, DefaultMaximumLineLength, out formatted);
 
     /// <summary>
-    /// Maps a declined format back into the source: the 1-based line of the first token whose
-    /// printed form would differ, or — when the token streams agree and the check failed on
+    /// Maps a declined format back into the prepared source: the 1-based line of the first token
+    /// whose printed form differs, or — when the token streams agree and the check failed on
     /// comments — the line of the first comment whose text would change. Null when the streams
     /// cannot be aligned at all, leaving no single spot to point at.
     /// </summary>
-    private static int? FirstDifferenceLine(string source, string formatted)
+    private static int? FirstDifferenceLine(string prepared, string printed)
     {
-        if (string.IsNullOrWhiteSpace(source))
-            return null;
-
-        var sourceSignature = Engine.DaxCodeFormatter.Signature(source);
-        var formattedSignature = Engine.DaxCodeFormatter.Signature(formatted);
+        var sourceSignature = Engine.DaxCodeFormatter.Signature(prepared);
+        var printedSignature = Engine.DaxCodeFormatter.Signature(printed);
 
         var index = 0;
         while (index < sourceSignature.Count
-               && index < formattedSignature.Count
-               && string.Equals(sourceSignature[index], formattedSignature[index], StringComparison.Ordinal))
+               && index < printedSignature.Count
+               && string.Equals(sourceSignature[index], printedSignature[index], StringComparison.Ordinal))
             index++;
 
-        if (index < sourceSignature.Count && index < formattedSignature.Count)
+        if (index < sourceSignature.Count && index < printedSignature.Count)
         {
             // The token streams diverge here, and the signature is 1:1 with the non-empty,
             // non-end-of-file tokens, so this index names the source token to point at.
-            var content = Engine.DaxLexer.Tokenize(source)
+            var content = Engine.DaxLexer.Tokenize(prepared)
                 .Where(token => token.Kind != Engine.DaxTokenKind.EndOfFile && token.Text.Length > 0)
                 .ToList();
             if (index < content.Count)
-                return LineOf(source, content[index].Start);
+                return LineOf(prepared, content[index].Start);
             return null;
         }
 
         // Tokens agree, so the check failed on the comments (the engine compares them trimmed
         // and separately from the code). Walk them in the engine's order — leading before
         // trailing, token by token — and report the first comment whose text would change.
-        var sourceComments = Comments(Engine.DaxLexer.Tokenize(source));
-        var formattedComments = Comments(Engine.DaxLexer.Tokenize(formatted));
-        for (var i = 0; i < sourceComments.Count && i < formattedComments.Count; i++)
+        var sourceComments = Comments(Engine.DaxLexer.Tokenize(prepared));
+        var printedComments = Comments(Engine.DaxLexer.Tokenize(printed));
+        for (var i = 0; i < sourceComments.Count && i < printedComments.Count; i++)
         {
             if (!string.Equals(
                     sourceComments[i].Text.Trim(),
-                    formattedComments[i].Text.Trim(),
+                    printedComments[i].Text.Trim(),
                     StringComparison.Ordinal))
-                return LineOf(source, sourceComments[i].Start);
+                return LineOf(prepared, sourceComments[i].Start);
         }
 
         return null;
     }
+
+    private static string NormalizeLineEndings(string text) =>
+        string.Join(Environment.NewLine, text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'));
 
     private static List<Engine.DaxComment> Comments(List<Engine.DaxToken> tokens)
     {

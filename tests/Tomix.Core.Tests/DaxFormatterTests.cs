@@ -108,8 +108,8 @@ public sealed class DaxFormatterTests
     [Fact]
     public void TryFormat_WhenFormattingDeclines_ReportsFirstDifferenceLine()
     {
-        // The printer would re-indent the block comment that lands on an indented line; the
-        // result must point at the comment's line.
+        // Printing moves the trailing line comment after the block comment (reordering comments
+        // changes their sequence), so the result must point at the first affected comment.
         var dax = "SUM(Sales[Amount]) -- total sales\n/* block\n   comment */\n+ [Cost]";
 
         var result = DaxFormatter.TryFormat(dax);
@@ -120,7 +120,7 @@ public sealed class DaxFormatterTests
             "/* block",
             "   comment */",
             "+ [Cost]"), result.Formatted);
-        Assert.Equal(2, result.FirstDifferenceLine);
+        Assert.Equal(1, result.FirstDifferenceLine);
     }
 
     [Fact]

@@ -36,7 +36,7 @@ public sealed class OfflineDaxFormatterClientTests
         Assert.False(response.Success);
         var error = Assert.Single(response.Errors);
         Assert.Contains("without changing its code", error);
-        Assert.Contains("line 2", error);
+        Assert.Contains("line 1", error);
         Assert.Equal(expression, response.Formatted);
     }
 
